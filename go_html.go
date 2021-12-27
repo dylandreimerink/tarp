@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the https://github.com/golang/go/blob/master/LICENSE file.
 
-package main
+package tarp
 
 import (
 	"bufio"
