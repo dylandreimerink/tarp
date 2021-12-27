@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the https://github.com/golang/go/blob/master/LICENSE file.
 
-package main
+package tarp
 
 import (
 	"bufio"
@@ -89,13 +89,13 @@ func funcOutput(profile, outputFile string) error {
 }
 
 // findFuncs parses the file and returns a slice of FuncExtent descriptors.
-func findFuncs(name string) ([]*FuncExtent, error) {
+func findFuncs(name string) ([]*funcExtent, error) {
 	fset := token.NewFileSet()
 	parsedFile, err := parser.ParseFile(fset, name, nil, 0)
 	if err != nil {
 		return nil, err
 	}
-	visitor := &FuncVisitor{
+	visitor := &funcVisitor{
 		fset:    fset,
 		name:    name,
 		astFile: parsedFile,
@@ -104,8 +104,8 @@ func findFuncs(name string) ([]*FuncExtent, error) {
 	return visitor.funcs, nil
 }
 
-// FuncExtent describes a function's extent in the source by file and position.
-type FuncExtent struct {
+// funcExtent describes a function's extent in the source by file and position.
+type funcExtent struct {
 	name      string
 	startLine int
 	startCol  int
@@ -113,16 +113,16 @@ type FuncExtent struct {
 	endCol    int
 }
 
-// FuncVisitor implements the visitor that builds the function position list for a file.
-type FuncVisitor struct {
+// funcVisitor implements the visitor that builds the function position list for a file.
+type funcVisitor struct {
 	fset    *token.FileSet
 	name    string // Name of file.
 	astFile *ast.File
-	funcs   []*FuncExtent
+	funcs   []*funcExtent
 }
 
 // Visit implements the ast.Visitor interface.
-func (v *FuncVisitor) Visit(node ast.Node) ast.Visitor {
+func (v *funcVisitor) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.FuncDecl:
 		if n.Body == nil {
@@ -131,7 +131,7 @@ func (v *FuncVisitor) Visit(node ast.Node) ast.Visitor {
 		}
 		start := v.fset.Position(n.Pos())
 		end := v.fset.Position(n.End())
-		fe := &FuncExtent{
+		fe := &funcExtent{
 			name:      n.Name.Name,
 			startLine: start.Line,
 			startCol:  start.Column,
@@ -144,7 +144,7 @@ func (v *FuncVisitor) Visit(node ast.Node) ast.Visitor {
 }
 
 // coverage returns the fraction of the statements in the function that were covered, as a numerator and denominator.
-func (f *FuncExtent) coverage(profile *cover.Profile) (num, den int64) {
+func (f *funcExtent) coverage(profile *cover.Profile) (num, den int64) {
 	// We could avoid making this n^2 overall by doing a single scan and annotating the functions,
 	// but the sizes of the data structures is never very large and the scan is almost instantaneous.
 	var covered, total int64
@@ -166,8 +166,8 @@ func (f *FuncExtent) coverage(profile *cover.Profile) (num, den int64) {
 	return covered, total
 }
 
-// Pkg describes a single package, compatible with the JSON output from 'go list'; see 'go help list'.
-type Pkg struct {
+// pkg describes a single package, compatible with the JSON output from 'go list'; see 'go help list'.
+type pkg struct {
 	ImportPath string
 	Dir        string
 	Error      *struct {
@@ -175,9 +175,9 @@ type Pkg struct {
 	}
 }
 
-func findPkgs(profiles []*cover.Profile) (map[string]*Pkg, error) {
+func findPkgs(profiles []*cover.Profile) (map[string]*pkg, error) {
 	// Run go list to find the location of every package we care about.
-	pkgs := make(map[string]*Pkg)
+	pkgs := make(map[string]*pkg)
 	var list []string
 	for _, profile := range profiles {
 		if strings.HasPrefix(profile.FileName, ".") || filepath.IsAbs(profile.FileName) {
@@ -207,7 +207,7 @@ func findPkgs(profiles []*cover.Profile) (map[string]*Pkg, error) {
 	}
 	dec := json.NewDecoder(bytes.NewReader(stdout))
 	for {
-		var pkg Pkg
+		var pkg pkg
 		err := dec.Decode(&pkg)
 		if err == io.EOF {
 			break
@@ -221,7 +221,7 @@ func findPkgs(profiles []*cover.Profile) (map[string]*Pkg, error) {
 }
 
 // findFile finds the location of the named file in GOROOT, GOPATH etc.
-func findFile(pkgs map[string]*Pkg, file string) (string, error) {
+func findFile(pkgs map[string]*pkg, file string) (string, error) {
 	if strings.HasPrefix(file, ".") || filepath.IsAbs(file) {
 		// Relative or absolute path.
 		return file, nil

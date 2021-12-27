@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE.txt file.
 
-package main
+package tarp
 
 import (
 	"fmt"
@@ -13,35 +13,14 @@ import (
 	_ "embed"
 
 	"github.com/dylandreimerink/gocovmerge"
-	"github.com/spf13/cobra"
 	"golang.org/x/tools/cover"
 )
-
-func main() {
-	makeCmd().Execute()
-}
-
-var flagOutput string
-
-func makeCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:  "tarp {coverage file 1} [coverage file N...]",
-		Long: "Tarp generates an interactive HTML coverage report for Go coverage files",
-		RunE: run,
-		Args: cobra.MinimumNArgs(1),
-	}
-
-	f := cmd.Flags()
-	f.StringVarP(&flagOutput, "output", "o", "./coverage.html", "The generated coverage report")
-
-	return cmd
-}
 
 //go:embed cover.tpl.html
 var reportTpl string
 
-func run(cmd *cobra.Command, args []string) error {
-	profiles, err := openAndMergeReports(args)
+func GenerateHTMLReport(inputPaths []string, outputPath string) error {
+	profiles, err := openAndMergeReports(inputPaths)
 	if err != nil {
 		return fmt.Errorf("Open and merge: %w", err)
 	}
@@ -107,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	ctx.PackageRadix.Simplify()
 
-	output, err := os.Create(flagOutput)
+	output, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
