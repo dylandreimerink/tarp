@@ -42,6 +42,13 @@ func (r *radixNode) simplify() {
 				r.Sub[path.Join(k, kk)] = vv
 				vv.File = vv.File || v.File
 				vv.Pkg = vv.Pkg || v.Pkg
+
+				// If the inner most node is a file, we should remove the pkg bool.
+				// Specifically for packages with 1 file.
+				if vv.File {
+					vv.Pkg = false
+				}
+
 				vv.Parent = r
 			}
 		}
