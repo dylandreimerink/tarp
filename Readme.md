@@ -6,7 +6,7 @@ Tarp generates a tree view which resembles the actual file structure of the proj
 ## Installation
 
 **Install via go**
-`go install github.com/dylandreimerink/tarp`
+`go install github.com/dylandreimerink/tarp/cmd/tarp@latest`
 
 ## Usage
 
