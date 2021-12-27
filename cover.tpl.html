@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            background: rgb(40, 40, 40);
+            color:rgb(80, 80, 80);
+        }
+
+        body,
+        pre,
+        #legend span {
+            font-family: Menlo, monospace;
+            font-weight: bold;
+        }
+
+        pre {
+            background: black;
+            padding: 5px;
+            max-height: 100vh;
+            overflow-y: scroll;
+        }
+
+        .treeview {
+            font-size: 20px;
+        }
+
+        /* Strip existing list styling */
+        .treeview ul,
+        .treeview li {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        /* Indent ul if it has input and label siblings (after the first level) */
+        .treeview input+label+ul {
+            margin: 0 0 0 22px;
+        }
+
+        .treeview pre {
+            margin: 0 0 0 22px;
+        }
+
+        .treeview label:before {
+            margin-right: 5px;
+        }
+
+        /* Hide ul elements if it has a input sibling */
+        .treeview input~ul,
+        .treeview input~pre {
+            display: none;
+        }
+
+        /* Display ul elements if the sibling input is checked */
+        .treeview input:checked~ul,
+        .treeview input:checked~pre {
+            display: block;
+        }
+
+        /* Hide default checkbox */
+        .treeview input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 20px;
+            width: 25px;
+            margin: 0px;
+        }
+
+        .treeview input+label.file:before {
+            content: "▸ 📄";
+        }
+
+        .treeview input:checked+label.file:before {
+            content: "▾ 📄";
+        }
+
+        .treeview input+label.pkg:before {
+            content: "▸ 📦";
+        }
+
+        .treeview input:checked+label.pkg:before {
+            content: "▾ 📦";
+        }
+
+        .treeview input+label.dir:before {
+            content: "▸ 📁";
+        }
+
+        .treeview input:checked+label.dir:before {
+            content: "▾ 📁";
+        }
+
+        {{colors}}
+    </style>
+</head>
+
+{{- /* Recursively walk the radix and generate structure */ -}}
+{{define "level"}}
+<ul>
+    {{ range $k, $v := .Sub }}
+    <li><input type="checkbox">
+        <label class="{{if .Pkg}}pkg{{else if .File}}file{{else}}dir{{end}} {{$v.CovClass}}">
+            {{$k}} ({{$v.CoverageStr}}%)
+        </label>
+        {{ if $v.Body }}
+            <pre class="code">
+                {{$v.Body}}
+            </pre>
+        {{ end}}
+        {{ if .Sub }}{{template "level" .}}{{end}}
+    </li>
+    {{ end}}
+</ul>
+{{end}}
+
+<body>
+    <div class="treeview">
+        {{ template "level" .PackageRadix }}
+    </div>
+</body>
+
+</html>
